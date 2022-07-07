@@ -10,10 +10,10 @@ export const data = new SlashCommandBuilder()
         .setRequired(true)
     );
 
-export async function execute(interaction, config, db) {
-    await interaction.deferReply();
-    const opt_string = interaction.options.getString("string");
+export async function execute(ctx) {
+    await ctx.interaction.deferReply();
+    const opt_string = ctx.interaction.options.getString("string");
 
     var hashed = hash(opt_string);
-    await interaction.editReply(hashed);
+    await ctx.interaction.editReply(hashed);
 }

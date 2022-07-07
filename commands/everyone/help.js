@@ -12,29 +12,29 @@ export const data = new SlashCommandBuilder()
         .addChoice("Trading", "Trading")
     );
 
-export async function execute(interaction, config, db) {
-    await interaction.deferReply();
+export async function execute(ctx) {
+    await ctx.interaction.deferReply();
 
-    const opt_categorie = interaction.options.getString("categorie");
+    const opt_categorie = ctx.interaction.options.getString("categorie");
 
     let help_embed = new MessageEmbed()
-        .setColor(config.getData("/main_color"))
-        .setThumbnail(interaction.client.user.avatarURL())
+        .setColor(ctx.config.getData("/main_color"))
+        .setThumbnail(ctx.interaction.client.user.avatarURL())
     
     if (opt_categorie) {
-        help_embed.setAuthor({ name: opt_categorie, iconURL: interaction.client.user.avatarURL(), url: config.getData("/help_link") });
-        for (let cmd of db.getData(`/categories[${db.getIndex("/categories", opt_categorie, "name")}]/commands`)) {
-            help_embed.addField(`\`/${cmd}\``, db.getData(`/commands[${db.getIndex("/commands", cmd, "name")}]/description`));
+        help_embed.setAuthor({ name: opt_categorie, iconURL: ctx.interaction.client.user.avatarURL(), url: ctx.config.getData("/help_link") });
+        for (let cmd of ctx.db.getData(`/categories[${ctx.db.getIndex("/categories", opt_categorie, "name")}]/commands`)) {
+            help_embed.addField(`\`/${cmd}\``, ctx.db.getData(`/commands[${ctx.db.getIndex("/commands", cmd, "name")}]/description`));
         }
         if (help_embed.fields.length === 0) {
             help_embed.setDescription("Aucune commande dans cette catégorie");
         }
     } else {
-        help_embed.setAuthor({ name: `Aide de ${interaction.client.user.username}`, iconURL: interaction.client.user.avatarURL(), url: config.getData("/help_link") });
-        for (let categorie of db.getData("/categories")) {
+        help_embed.setAuthor({ name: `Aide de ${ctx.interaction.client.user.username}`, iconURL: ctx.interaction.client.user.avatarURL(), url: ctx.config.getData("/help_link") });
+        for (let categorie of ctx.db.getData("/categories")) {
             help_embed.addField(categorie.name, `\`/help ${categorie.name}\``, true);
         }
     }
 
-    await interaction.editReply({ embeds: [help_embed] });
+    await ctx.interaction.editReply({ embeds: [help_embed] });
 }

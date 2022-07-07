@@ -3,11 +3,15 @@ import { readdirSync } from 'fs';
 import { JsonDB } from 'node-json-db';
 import { Config } from 'node-json-db/dist/lib/JsonDBConfig.js';
 import { createHash } from 'crypto';
-import { Vote } from './libs/Vote.js';
+import { Context } from './lib/Context.js';
 
 // Import config and db
 const config = new JsonDB(new Config("config", true, true, '/'));
 const db = new JsonDB(new Config("db", true, true, '/'));
+const ctx = new Context({
+    db: db,
+    config: config
+})
 
 // Log with the current date
 export async function log(msg) {
@@ -25,42 +29,16 @@ export function hash(str) {
     return createHash('md5').update(str).digest('hex');
 }
 
-// Get str amount of tokens
-export function get_str_amount(amount, token_id, abbr = true, code = false) {
-    let token = get_token(token_id);
-    let type;
-    if (amount == 1) {
-        type = "sing";
-    } else {
-        type = "plur";
-    }
-    if (abbr) {
-        type += "_abbr";
-    }
-    if (code) {
-        return `\`${amount}\` ${token.name[type]}`;
-    }
-    return `${amount} ${token.name[type]}`;
-}
-
 // Create a new client instance
 const client = new Client({ intents: [
     Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    "GUILD_MEMBERS",
-    "GUILD_PRESENCES"
+    Intents.FLAGS.GUILD_MESSAGES
 ] });
-
-client.setMaxListeners(Infinity);
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
     await log('Bot logged !');
-    // Restart votes
-    for (let vote_id in await db.getData("/votes")) {
-        let vote = db.getData(`/votes/${vote_id}`);
-        await new Vote(client, db, config, await client.users.fetch(vote.author_id), undefined, vote.subject, vote.participants, await (await client.channels.fetch(vote.msg.channel_id)).messages.fetch(vote.msg.msg_id), new Date(vote.start_time), new Date(vote.end_time), vote.id, vote.votes).init();
-    }
+    ctx.setClient(client);
 });
 
 // Set listeners
@@ -73,7 +51,7 @@ let cmd_listener = async interaction => {
 
         log(`${interaction.user.username} execute ${commandName}`);
 
-        await command.execute(interaction, config, db);
+        await command.execute(ctx.clone().setInteraction(interaction));
     }
 }
 
@@ -83,7 +61,7 @@ let help_msg_listener = async msg => {
     }
 }
 
-client.setMaxListeners(0);
+client.setMaxListeners(Infinity);
 client.on('interactionCreate', cmd_listener);
 client.on('messageCreate', help_msg_listener);
 

@@ -4,6 +4,6 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 export const data = new SlashCommandBuilder()
     .setName('new_id')
     .setDescription('Génère un nouvel identifiant');
-export async function execute(interaction, config, db) {
-    await interaction.reply(uuidv4());
+export async function execute(ctx) {
+    await ctx.interaction.reply(uuidv4());
 }
