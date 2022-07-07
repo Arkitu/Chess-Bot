@@ -9,7 +9,6 @@ export const data = new SlashCommandBuilder()
         .setDescription("La categorie sur laquelle vous voulez des précisions")
         .setRequired(false)
         .addChoice("Classiques", "Classiques")
-        .addChoice("Trading", "Trading")
     );
 
 export async function execute(ctx) {
