@@ -1,3 +1,7 @@
+import { TicTacToe, Player } from '../lib/Games.js';
+
+var GAME = "TicTacToe";
+
 function gaussianRand() {
     var rand = 0;
 
@@ -406,22 +410,32 @@ function Population({
     }
 }
 
-function define_fitness (net) {
-    /*
-    let fitness = 0;
-    fitness += 1 - net.feedForward([0, 0, 1])[0];
-    fitness += net.feedForward([1, 0, 1])[0];
-    fitness += net.feedForward([0, 1, 1])[0];
-    fitness += 1 - net.feedForward([1, 1, 1])[0];
-    return Math.max((fitness * 100 - 200), 1) ** 2;
-    */
-    //return -(new FindTheNumber(net).score());
-    let a = Math.round((Math.random()*10)+1);
-    let b = Math.round((Math.random()*10)+1);
-    let ia_result = net.feedForward([a, b])[0];
-    let good_result = Math.sqrt((a * a) + (b * b));
-    if (isNaN(ia_result)) return 0;
-    return 2-(Math.abs(good_result - ia_result)) / good_result;
+function define_fitness (pop) {
+    switch (GAME) {
+        case "Hypothenuse": {
+            pop.population.forEach(net => {
+                let a = Math.round((Math.random()*10)+1);
+                let b = Math.round((Math.random()*10)+1);
+                let ia_result = net.feedForward([a, b])[0];
+                let good_result = Math.sqrt((a * a) + (b * b));
+                if (isNaN(ia_result)) return 0;
+                net.fitness = 2-(Math.abs(good_result - ia_result)) / good_result;
+            })
+            break;
+        }
+        case "TicTacToe": {
+            pop.population.forEach(async net => {
+                for (let net2 of pop.population) {
+                    new TicTacToe({ ctx:ctx, players:[new Player({ctx:ctx, isUser:false, net}), new Player({ctx:ctx, isUser:false, net2})], headless:true })
+                }
+            })
+            break;
+        }
+        default:
+            throw new Error("No game for define_fitness");
+            break;
+    }
+    return pop
 }
 
 const pop = Population({
@@ -433,6 +447,7 @@ const pop = Population({
 let scores = []
 
 for (let i = 0; i < 10000; i++) { // do 300 generations
+    pop = define_fitness(pop);
     pop.population.forEach(net => { // for each net
         net.fitness = define_fitness(net); // calculate net fitness
     });
@@ -452,40 +467,3 @@ console.debug(scores);
 console.debug(`Champ score: ${define_fitness(champ)}`);
 
 console.debug("Done !")
-
-/*
-function xorfitness(net) {
-    let fitness = 0;
-    fitness += 1 - net.feedForward([0, 0, 1])[0];
-    fitness += net.feedForward([1, 0, 1])[0];
-    fitness += net.feedForward([0, 1, 1])[0];
-    fitness += 1 - net.feedForward([1, 1, 1])[0];
-    return Math.max((fitness * 100 - 200), 1) ** 2;
-}
-// create a population with 3 inputs (num 1, num2, and bias) and 1 output (the result of xor)
-const pop = Population({
-    inputs: 3,
-    outputs: 1,
-    popSize: 128
-})
-for (let i = 0; i < 300; i++) { // do 300 generations
-    pop.population.forEach(net => { // for each net
-        net.fitness = xorfitness(net); // calculate net fitness
-    })
-    console.log(pop.avgFitness())
-    // conduct generation based off fitness scores
-    pop.doGeneration();
-}
-// calculate fitness of end generation
-pop.population.forEach(net => {
-    net.fitness = xorfitness(net);
-})
-const champ = pop.population.sort((a, b) => b.fitness - a.fitness)[0]; // find the champion
-
-// See how the champion does on approximating XOR (it won't succeed)
-console.log(champ.feedForward([0, 0, 1])[0]) // 0.5055776837087795
-console.log(champ.feedForward([1, 0, 1])[0]) // 0.8682121626427614
-console.log(champ.feedForward([0, 1, 1])[0]) // 0.8355539727852697
-console.log(champ.feedForward([1, 1, 1])[0]) // 0.9654170839476316
-console.log(xorfitness(champ))
-*/
